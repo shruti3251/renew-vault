@@ -51,6 +51,7 @@ function sanitizeItem(item) {
     renewalHistory: Array.isArray(item.renewalHistory)
       ? item.renewalHistory.filter((h) => isPlainObject(h) && typeof h.oldExpiry === 'string')
       : [],
+    ...(item.isSample === true ? { isSample: true } : {}),
     createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
     updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
   };

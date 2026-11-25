@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Bell, BellOff, Download, Upload, FileSpreadsheet, Database, Sun, Moon, Monitor, Info } from 'lucide-react';
+import { Bell, BellOff, Download, Upload, FileSpreadsheet, Database, Trash2, Sun, Moon, Monitor, Info } from 'lucide-react';
 import { Button, Card, focusRing } from '../components/ui';
 import { notificationsSupported } from '../hooks/useReminders';
 
@@ -26,7 +26,7 @@ function Section({ icon: Icon, title, description, children, tone = 'indigo' }) 
   );
 }
 
-export default function Settings({ settings, setSettings, itemCount, onExport, onImportFile, onCSV, onLoadSample, toast }) {
+export default function Settings({ settings, setSettings, itemCount, onExport, onImportFile, onCSV, onLoadSample, sampleCount = 0, onRemoveSample, toast }) {
   const fileRef = useRef(null);
   const supported = notificationsSupported();
   const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported');
@@ -136,6 +136,11 @@ export default function Settings({ settings, setSettings, itemCount, onExport, o
           <Button variant="secondary" onClick={onLoadSample}>
             <Database className="h-4 w-4" aria-hidden="true" /> Load sample data
           </Button>
+          {sampleCount > 0 && (
+            <Button variant="dangerSoft" onClick={onRemoveSample}>
+              <Trash2 className="h-4 w-4" aria-hidden="true" /> Remove sample data ({sampleCount})
+            </Button>
+          )}
         </div>
       </Section>
     </div>

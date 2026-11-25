@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { Sparkles, CalendarClock, PartyPopper, ChevronRight, Database } from 'lucide-react';
+import { Sparkles, CalendarClock, PartyPopper, ChevronRight, Database, Trash2 } from 'lucide-react';
 import StatCards from '../components/StatCards';
 import CategoryCard from '../components/CategoryCard';
 import StatusChip from '../components/StatusChip';
@@ -22,7 +22,7 @@ function SectionTitle({ icon: Icon, children, aside }) {
   );
 }
 
-export default function Dashboard({ items, due, counts, statsByCategory, onStatus, onOpenCategory, onAddCategory, onOpenItem, onLoadSample }) {
+export default function Dashboard({ items, due, counts, statsByCategory, onStatus, onOpenCategory, onAddCategory, onOpenItem, onLoadSample, sampleCount = 0, onRemoveSample }) {
   const upcoming = useMemo(() => {
     const list = items.filter((i) => i.daysLeft !== null && i.daysLeft >= 0 && i.daysLeft <= 90).sort(sortByDaysLeft);
     const groups = [];
@@ -48,6 +48,20 @@ export default function Dashboard({ items, due, counts, statsByCategory, onStatu
           </Button>
         )}
       </div>
+
+      {sampleCount > 0 && (
+        <div className="flex flex-col gap-3 rounded-2xl bg-indigo-50 p-4 ring-1 ring-indigo-200 sm:flex-row sm:items-center sm:justify-between dark:bg-indigo-500/10 dark:ring-indigo-500/30">
+          <p className="flex items-start gap-2 text-sm text-indigo-900 dark:text-indigo-200">
+            <Database className="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
+            <span>
+              You&apos;re looking at <strong>{sampleCount} sample item{sampleCount === 1 ? '' : 's'}</strong>. Remove them when you&apos;re ready to add your real documents.
+            </span>
+          </p>
+          <Button variant="secondary" onClick={onRemoveSample} className="flex-none">
+            <Trash2 className="h-4 w-4" aria-hidden="true" /> Remove sample data
+          </Button>
+        </div>
+      )}
 
       <StatCards counts={counts} onSelect={onStatus} />
 

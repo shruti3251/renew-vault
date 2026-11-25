@@ -22,6 +22,7 @@ import { downloadICS } from './utils/ics';
 import { downloadCSV } from './utils/csv';
 import { exportBackup, parseBackup } from './utils/storage';
 import { downloadFile } from './utils/download';
+import { isSampleItem } from './utils/sampleData';
 
 export default function App() {
   const toast = useToast();
@@ -186,6 +187,20 @@ export default function App() {
       });
   };
 
+  const sampleCount = useMemo(() => items.filter(isSampleItem).length, [items]);
+  const removeSample = () =>
+    setConfirm({
+      title: 'Remove sample data?',
+      message: `This deletes the ${sampleCount} sample item${sampleCount === 1 ? '' : 's'}. Items you added yourself are kept.`,
+      confirmLabel: 'Remove sample data',
+      onConfirm: () => {
+        const n = store.removeSampleItems();
+        setConfirm(null);
+        setPopupOpen(false);
+        toast.success(`Removed ${n} sample item${n === 1 ? '' : 's'}. You're ready to add your own.`);
+      },
+    });
+
   const loadSample = () => {
     const n = store.loadSample();
     toast.success(`Added ${n} sample items with dates relative to today.`);
@@ -227,6 +242,8 @@ export default function App() {
           toast.success('CSV downloaded.');
         }}
         onLoadSample={loadSample}
+        sampleCount={sampleCount}
+        onRemoveSample={removeSample}
         toast={toast}
       />
     );
@@ -242,6 +259,8 @@ export default function App() {
         onAddCategory={(id) => setForm({ categoryId: id })}
         onOpenItem={openItem}
         onLoadSample={loadSample}
+        sampleCount={sampleCount}
+        onRemoveSample={removeSample}
       />
     );
   }

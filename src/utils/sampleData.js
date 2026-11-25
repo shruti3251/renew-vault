@@ -40,8 +40,27 @@ export function buildSampleItems(now = new Date()) {
     snoozedUntil: null,
     lastNotifiedOn: null,
     renewalHistory: [],
+    isSample: true,
     // Stagger createdAt so "recently added" sort is meaningful.
     createdAt: new Date(Date.now() - (raw.length - i) * 3600_000 * 24 * 30).toISOString(),
     updatedAt: nowIso,
   }));
+}
+
+/** Identity of an item ignoring dates, so sample items can be recognised after renewals. */
+function fingerprint(categoryId, values) {
+  const entries = Object.entries(values || {})
+    .filter(([k, v]) => v && !/date/i.test(k))
+    .sort(([a], [b]) => a.localeCompare(b));
+  return `${categoryId}|${JSON.stringify(entries)}`;
+}
+
+const SAMPLE_FINGERPRINTS = new Set(buildSampleItems().map((i) => fingerprint(i.categoryId, i.values)));
+
+/**
+ * True for items created by "Load sample data". Items loaded before the
+ * isSample flag existed are recognised by their exact sample values.
+ */
+export function isSampleItem(item) {
+  return item.isSample === true || SAMPLE_FINGERPRINTS.has(fingerprint(item.categoryId, item.values));
 }

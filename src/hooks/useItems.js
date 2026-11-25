@@ -5,7 +5,7 @@ import { computeReminderDate, getExpiry } from '../utils/reminders';
 import { addDaysStr, todayStr } from '../utils/dates';
 import { normalizeUpper } from '../utils/mask';
 import { uuid } from '../utils/download';
-import { buildSampleItems } from '../utils/sampleData';
+import { buildSampleItems, isSampleItem } from '../utils/sampleData';
 
 /** Trim strings, apply uppercase rules, drop empty optional values. */
 export function cleanValues(categoryId, values) {
@@ -160,7 +160,15 @@ export function useItems(toast) {
     return samples.length;
   }, []);
 
+  /** Delete only sample items; the user's own items are kept. Returns how many were removed. */
+  const removeSampleItems = useCallback(() => {
+    const n = state.items.filter(isSampleItem).length;
+    setItems((items) => items.filter((i) => !isSampleItem(i)));
+    return n;
+  }, [state.items, setItems]);
+
   return {
+    removeSampleItems,
     items: state.items,
     settings: state.settings,
     state,
