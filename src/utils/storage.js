@@ -126,6 +126,11 @@ export function parseBackup(text) {
   } catch {
     return { ok: false, error: 'That file is not valid JSON.' };
   }
+  return parseBackupObject(raw);
+}
+
+/** Validate an already-parsed backup ({ items, settings? }). Same result shape as parseBackup. */
+export function parseBackupObject(raw) {
   if (!isPlainObject(raw) || !Array.isArray(raw.items)) {
     return { ok: false, error: 'That file is not a RenewalVault backup (no "items" list found).' };
   }

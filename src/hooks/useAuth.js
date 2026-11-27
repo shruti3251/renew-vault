@@ -25,6 +25,7 @@ export function useAuth() {
     (async () => {
       if (!userId) {
         setProfile(null);
+        setStatus('loading');
         try {
           const r = await callAdmin('status');
           if (!cancelled) setStatus(r.needsSetup ? 'setup' : 'signedOut');

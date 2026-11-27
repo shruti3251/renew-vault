@@ -129,15 +129,15 @@ export default function Settings({ settings, setSettings, itemCount, cloud = fal
         }>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onExport}>
-            <Download className="h-4 w-4" aria-hidden="true" /> Export backup (JSON)
+            <Download className="h-4 w-4" aria-hidden="true" /> Export backup (Excel)
           </Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-            <Upload className="h-4 w-4" aria-hidden="true" /> Import backup (JSON)
+            <Upload className="h-4 w-4" aria-hidden="true" /> Import backup (Excel)
           </Button>
           <input
             ref={fileRef}
             type="file"
-            accept="application/json,.json"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.json,application/json"
             className="sr-only"
             tabIndex={-1}
             aria-label="Choose backup file"

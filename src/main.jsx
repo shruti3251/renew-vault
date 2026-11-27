@@ -10,7 +10,7 @@ import './index.css';
 /** Only signed-in portal users get the vault. Remounts App per user so nothing leaks between accounts. */
 function AuthGate() {
   const auth = useAuth();
-  if (auth.status === 'signedIn') return <App key={auth.profile.user_id} auth={auth} />;
+  if (auth.status === 'signedIn' && auth.profile) return <App key={auth.profile.user_id} auth={auth} />;
   return <AuthScreen auth={auth} />;
 }
 

@@ -20,8 +20,8 @@ import { enrichItem, daysLeftText, isDue } from './utils/reminders';
 import { formatDisplay } from './utils/dates';
 import { downloadICS } from './utils/ics';
 import { downloadCSV } from './utils/csv';
-import { exportBackup, parseBackup } from './utils/storage';
-import { downloadFile } from './utils/download';
+import { parseBackup } from './utils/storage';
+import { downloadExcelBackup, parseExcelBackup } from './utils/excel';
 import { isSampleItem } from './utils/sampleData';
 
 export default function App({ auth = null }) {
@@ -153,26 +153,31 @@ export default function App({ auth = null }) {
   };
 
   // ----- settings actions -----
-  const exportJSON = () => {
-    downloadFile(`renewalvault-backup-${today}.json`, exportBackup(store.state), 'application/json');
-    toast.success(`Backup downloaded (${items.length} items).`);
+  const exportExcel = async () => {
+    try {
+      await downloadExcelBackup(enriched, store.state.items, `renewalvault-backup-${today}.xlsx`);
+      toast.success(`Excel backup downloaded (${items.length} item${items.length === 1 ? '' : 's'}).`);
+    } catch (err) {
+      console.warn('[RenewalVault] Excel export failed', err);
+      toast.error('Could not create the Excel file. Please try again.', { title: 'Export failed' });
+    }
   };
 
   const importFile = async (file) => {
-    let text;
+    let res;
     try {
-      text = await file.text();
+      res = /\.json$/i.test(file.name) ? parseBackup(await file.text()) : await parseExcelBackup(file);
     } catch {
       toast.error('Could not read that file.');
       return;
     }
-    const res = parseBackup(text);
     if (!res.ok) {
       toast.error(res.error, { title: 'Import failed' });
       return;
     }
     const apply = () => {
-      store.replaceState({ ...res.state, settings: { ...res.state.settings, theme: settings.theme } });
+      // Backups only restore documents; this browser's settings stay as they are.
+      store.replaceState({ ...store.state, items: res.state.items });
       setConfirm(null);
       setPopupCheck((n) => n + 1);
       toast.success(`Imported ${res.state.items.length} item${res.state.items.length === 1 ? '' : 's'}.${res.skipped ? ` ${res.skipped} invalid entr${res.skipped === 1 ? 'y was' : 'ies were'} skipped.` : ''}`);
@@ -237,7 +242,7 @@ export default function App({ auth = null }) {
         itemCount={items.length}
         cloud={store.cloud}
         auth={auth}
-        onExport={exportJSON}
+        onExport={exportExcel}
         onImportFile={importFile}
         onCSV={() => {
           downloadCSV(enriched);
