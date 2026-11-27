@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Bell, BellOff, Download, Upload, FileSpreadsheet, Database, Trash2, Sun, Moon, Monitor, Info } from 'lucide-react';
+import { Users, UserCircle, Bell, BellOff, Download, Upload, FileSpreadsheet, Database, Trash2, Sun, Moon, Monitor, Info } from 'lucide-react';
 import { Button, Card, focusRing } from '../components/ui';
 import { notificationsSupported } from '../hooks/useReminders';
+import UsersPanel, { AccountPanel } from '../components/UsersPanel';
 
 function Section({ icon: Icon, title, description, children, tone = 'indigo' }) {
   const tones = {
@@ -26,7 +27,7 @@ function Section({ icon: Icon, title, description, children, tone = 'indigo' }) 
   );
 }
 
-export default function Settings({ settings, setSettings, itemCount, onExport, onImportFile, onCSV, onLoadSample, sampleCount = 0, onRemoveSample, toast }) {
+export default function Settings({ settings, setSettings, itemCount, cloud = false, auth = null, onExport, onImportFile, onCSV, onLoadSample, sampleCount = 0, onRemoveSample, toast }) {
   const fileRef = useRef(null);
   const supported = notificationsSupported();
   const [permission, setPermission] = useState(supported ? Notification.permission : 'unsupported');
@@ -59,6 +60,18 @@ export default function Settings({ settings, setSettings, itemCount, onExport, o
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">Settings</h1>
+
+      {auth && (
+        <Section icon={UserCircle} title="Your account">
+          <AccountPanel auth={auth} toast={toast} />
+        </Section>
+      )}
+
+      {auth?.isAdmin && (
+        <Section icon={Users} title="Users" tone="amber" description="Everyone listed here can sign in and see the shared vault. Only admins see this section.">
+          <UsersPanel me={auth.profile} toast={toast} />
+        </Section>
+      )}
 
       <Section icon={alertsOn ? Bell : BellOff} title="Desktop alerts" description="Get a system notification for each item that needs attention (once per item per day) while the portal is open in a tab.">
         {!supported ? (
@@ -109,7 +122,11 @@ export default function Settings({ settings, setSettings, itemCount, onExport, o
         </div>
       </Section>
 
-      <Section icon={Database} title="Backup & export" tone="emerald" description={`Your data is stored only in this browser (${itemCount} item${itemCount === 1 ? '' : 's'}). Export a backup regularly.`}>
+      <Section icon={Database} title="Backup & export" tone="emerald" description={
+          cloud
+            ? `Your vault is shared online (${itemCount} item${itemCount === 1 ? '' : 's'}). Every signed-in user sees the same items, and changes appear for them instantly. Export a backup regularly.`
+            : `Your data is stored only in this browser (${itemCount} item${itemCount === 1 ? '' : 's'}). Export a backup regularly.`
+        }>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onExport}>
             <Download className="h-4 w-4" aria-hidden="true" /> Export backup (JSON)

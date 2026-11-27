@@ -24,7 +24,7 @@ import { exportBackup, parseBackup } from './utils/storage';
 import { downloadFile } from './utils/download';
 import { isSampleItem } from './utils/sampleData';
 
-export default function App() {
+export default function App({ auth = null }) {
   const toast = useToast();
   const store = useItems(toast);
   const { items, settings, setSettings } = store;
@@ -61,9 +61,9 @@ export default function App() {
 
   // Popup on load (and on a new day) when something is due and it wasn't dismissed today.
   useEffect(() => {
-    if (popupItems.length && settings.popupDismissedOn !== today) setPopupOpen(true);
+    if (store.loaded && popupItems.length && settings.popupDismissedOn !== today) setPopupOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [popupCheck, today]);
+  }, [popupCheck, today, store.loaded]);
 
   // Close the popup once everything in it has been handled.
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function App() {
     else
       setConfirm({
         title: 'Replace current data?',
-        message: `This replaces your ${items.length} current item${items.length === 1 ? '' : 's'} with ${res.state.items.length} item${res.state.items.length === 1 ? '' : 's'} from the backup.`,
+        message: `This replaces the ${items.length} current item${items.length === 1 ? '' : 's'} with ${res.state.items.length} item${res.state.items.length === 1 ? '' : 's'} from the backup.${store.cloud ? ' The vault is shared, so this changes it for every user of this portal.' : ''}`,
         confirmLabel: 'Replace',
         onConfirm: apply,
       });
@@ -191,7 +191,7 @@ export default function App() {
   const removeSample = () =>
     setConfirm({
       title: 'Remove sample data?',
-      message: `This deletes the ${sampleCount} sample item${sampleCount === 1 ? '' : 's'}. Items you added yourself are kept.`,
+      message: `This deletes the ${sampleCount} sample item${sampleCount === 1 ? '' : 's'}${store.cloud ? ' for every user' : ''}. Real items are kept.`,
       confirmLabel: 'Remove sample data',
       onConfirm: () => {
         const n = store.removeSampleItems();
@@ -235,6 +235,8 @@ export default function App() {
         settings={settings}
         setSettings={setSettings}
         itemCount={items.length}
+        cloud={store.cloud}
+        auth={auth}
         onExport={exportJSON}
         onImportFile={importFile}
         onCSV={() => {
@@ -266,6 +268,33 @@ export default function App() {
   }
 
   const formItem = form?.itemId ? items.find((i) => i.id === form.itemId) : null;
+
+  if (!store.loaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-slate-50 to-fuchsia-50 px-6 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950 dark:text-slate-100">
+        <div className="max-w-sm text-center" role="status" aria-live="polite">
+          {store.loadError ? (
+            <>
+              <p className="text-lg font-bold">Can't reach the vault</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{store.loadError}</p>
+              <button
+                type="button"
+                onClick={store.retryLoad}
+                className="mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                Try again
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="mx-auto block h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600 motion-reduce:animate-none" aria-hidden="true" />
+              <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400">Loading your vault…</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-fuchsia-50 bg-fixed text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950 dark:text-slate-100">

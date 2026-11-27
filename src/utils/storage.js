@@ -33,7 +33,7 @@ function isPlainObject(v) {
 }
 
 /** Make an item safe to use, or return null if it's unusable. */
-function sanitizeItem(item) {
+export function sanitizeItem(item) {
   if (!isPlainObject(item) || typeof item.id !== 'string' || !item.id) return null;
   if (!CATEGORY_MAP[item.categoryId] || !isPlainObject(item.values)) return null;
   const values = {};
@@ -136,4 +136,67 @@ export function parseBackup(text) {
   const ids = new Set();
   state.items = state.items.filter((i) => (ids.has(i.id) ? false : ids.add(i.id)));
   return { ok: true, state, skipped: raw.items.length - state.items.length };
+}
+
+/* ------------------------------------------------------------------ */
+/* Per-browser data that is NOT shared through the cloud vault.        */
+/* ------------------------------------------------------------------ */
+
+const NOTIFIED_KEY = 'renewalvault:notified';
+const PRE_CLOUD_KEY = 'renewalvault:v1:pre-cloud';
+
+/**
+ * Which items this browser already showed a desktop alert for, and on what
+ * day ({ [itemId]: 'YYYY-MM-DD' }). Kept per browser so every person viewing
+ * the shared vault gets their own alerts.
+ */
+export function loadNotified(fallbackItems = []) {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(NOTIFIED_KEY) || 'null');
+    if (isPlainObject(raw)) {
+      return Object.fromEntries(Object.entries(raw).filter(([, d]) => isValidISODate(d)));
+    }
+  } catch {
+    /* ignore */
+  }
+  // First run: pick up what older versions stored on the items themselves.
+  return Object.fromEntries(fallbackItems.filter((i) => isValidISODate(i.lastNotifiedOn)).map((i) => [i.id, i.lastNotifiedOn]));
+}
+
+export function saveNotified(map) {
+  try {
+    window.localStorage.setItem(NOTIFIED_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Items saved in this browser before the shared vault existed. They are
+ * parked under their own key until they've been uploaded, so nothing is lost
+ * if the first upload fails. Returns the items still waiting to be uploaded.
+ */
+export function stashLocalItemsForCloud(items) {
+  try {
+    const prev = JSON.parse(window.localStorage.getItem(PRE_CLOUD_KEY) || 'null');
+    const waiting = isPlainObject(prev) && !prev.migrated && Array.isArray(prev.items) ? prev.items : [];
+    const byId = new Map(waiting.map((i) => [i.id, i]));
+    for (const i of items) byId.set(i.id, i);
+    const all = [...byId.values()].map(sanitizeItem).filter(Boolean);
+    if (all.length || items.length) {
+      window.localStorage.setItem(PRE_CLOUD_KEY, JSON.stringify({ migrated: all.length === 0, items: all }));
+    }
+    return all;
+  } catch {
+    return items;
+  }
+}
+
+export function markLocalItemsUploaded() {
+  try {
+    const prev = JSON.parse(window.localStorage.getItem(PRE_CLOUD_KEY) || 'null');
+    if (isPlainObject(prev)) window.localStorage.setItem(PRE_CLOUD_KEY, JSON.stringify({ ...prev, migrated: true }));
+  } catch {
+    /* ignore */
+  }
 }
