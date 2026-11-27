@@ -1,3 +1,11 @@
 node_modules
 dist
 *.local
+
+# Supabase CLI cache
+supabase/.temp
+
+# Local secrets: never commit
+Supabase pswd.txt
+*.pswd.txt
+.claude/
